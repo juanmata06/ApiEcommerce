@@ -1,0 +1,19 @@
+services:                       # Lista de servicios (contenedores) que se van a levantar
+  sql:                          # Nombre del servicio, aquí creamos uno llamado "sql"
+    image: mcr.microsoft.com/mssql/server:2022-latest   # Imagen oficial de SQL Server 2022 (última versión)
+    container_name: sqlserver2022                      # Nombre fijo del contenedor para identificarlo fácilmente
+    ports:                      # Mapea puertos del contenedor a tu máquina
+      - "1433:1433"             # Expone el puerto 1433 (SQL Server) de tu PC al puerto 1433 del contenedor
+    environment:                # Variables de entorno para configurar SQL Server
+      ACCEPT_EULA: "1"          # Acepta la licencia de SQL Server automáticamente (obligatorio)
+      MSSQL_SA_PASSWORD: "MyStrongPass123"  # Contraseña del usuario 'sa' (admin de SQL Server)
+      MSSQL_PID: "Developer"   # Usa la edición Developer (gratuita para desarrollo y pruebas)
+    volumes:                    # Volúmenes montados en este contenedor
+      - sqlserverdata:/var/opt/mssql  # Guarda los datos de SQL Server en un volumen persistente
+volumes:                        # Declaración de los volúmenes que se van a usar
+  sqlserverdata:                # Crea un volumen llamado "sqlserverdata" para persistir datos
+# Comandos útiles:
+# Levantar los contenedores en segundo plano:
+#   docker-compose up -d        # Arranca los contenedores en segundo plano
+# Apagar y eliminar contenedores (no borra los volúmenes):
+#   docker-compose down         # Detiene y borra los contenedores, pero mantiene los datos guardados en el volumen

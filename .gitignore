@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+.env
+*.user
+*.log
+*.tmp
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.nupkg
+*.snupkg
+PublishProfiles/
