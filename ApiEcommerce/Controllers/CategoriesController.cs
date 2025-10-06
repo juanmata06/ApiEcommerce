@@ -33,5 +33,105 @@ namespace ApiEcommerce.Controllers
             }
             return Ok(categogiesDto);
         }
+
+        [HttpGet("{id:int}", Name = "GetCategoryById")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetCategoryById(int id)
+        {
+            var category = _categoryRepository.GetCategoryById(id);
+            if (category == null)
+            {
+                return NotFound($"No category {id} found");
+            }
+            var categoryDto = _mapper.Map<CategoryDto>(category);
+            return Ok(categoryDto);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult CreateCategory([FromBody] CreateCategoryDto createCategoryDto)
+        {
+            if (createCategoryDto == null)
+            {
+                return BadRequest(ModelState);
+            }
+            if (_categoryRepository.CategoryExistsByName(createCategoryDto.Name))
+            {
+                ModelState.AddModelError("CustomError", $"Category {createCategoryDto.Name} already exists.");
+                return BadRequest(ModelState);
+            }
+            var category = _mapper.Map<Category>(createCategoryDto);
+            if (!_categoryRepository.CreateCategory(category))
+            {
+                ModelState.AddModelError("CustomError", "Something went wrong while saving the category.");
+                return StatusCode(500, ModelState);
+            }
+            return CreatedAtRoute("GetCategoryById", new { id = category.Id }, category);
+        }
+
+        [HttpPatch("{id:int}", Name = "UpdateCategoryById")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult UpdateCategoryById(int id, [FromBody] CreateCategoryDto updateCategoryDto)
+        {
+            if (!_categoryRepository.CategoryExistsById(id))
+            {
+                ModelState.AddModelError("CustomError", $"Category {id} doesn't exists.");
+                return NotFound(ModelState);
+            }
+            if (updateCategoryDto == null)
+            {
+                return BadRequest(ModelState);
+            }
+            if (_categoryRepository.CategoryExistsByName(updateCategoryDto.Name))
+            {
+                ModelState.AddModelError("CustomError", $"Category {updateCategoryDto.Name} already exists.");
+                return BadRequest(ModelState);
+            }
+            var category = _mapper.Map<Category>(updateCategoryDto);
+            category.Id = id;
+            if (!_categoryRepository.UpdateCategory(category))
+            {
+                ModelState.AddModelError("CustomError", "Something went wrong while updating the category.");
+                return StatusCode(500, ModelState);
+            }
+            return NoContent();
+        }
+
+        [HttpDelete("{id:int}", Name = "DeleteCategoryById")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult DeleteCategoryById(int id)
+        {
+            if (!_categoryRepository.CategoryExistsById(id))
+            {
+                ModelState.AddModelError("CustomError", $"Category {id} doesn't exists.");
+                return NotFound(ModelState);
+            }
+            var category = _categoryRepository.GetCategoryById(id);
+            if (category == null)
+            {
+                return NotFound($"Category {id} doesn't exists.");
+            }
+            if (!_categoryRepository.DeleteCategory(category))
+            {
+                ModelState.AddModelError("CustomError", "Something went wrong while deleting the category.");
+                return StatusCode(500, ModelState);
+            }
+            return NoContent();
+        }
     }
 }
