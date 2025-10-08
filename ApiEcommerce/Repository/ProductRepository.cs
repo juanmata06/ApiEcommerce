@@ -1,5 +1,6 @@
 using System;
 using ApiEcommerce.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ApiEcommerce.Repository.IRepository;
 
@@ -14,7 +15,10 @@ public class ProductRepository : IProductRepository
 
     public ICollection<Product> GetProducts()
     {
-        return _db.Products.OrderBy(p => p.Name).ToList();
+        return _db.Products
+            .Include(p => p.category)
+            .OrderBy(p => p.Name)
+            .ToList();
     }
 
     public ICollection<Product> GetProductsByCategoryId(int categoryId)
@@ -23,7 +27,11 @@ public class ProductRepository : IProductRepository
         {
             return new List<Product>();
         }
-        return _db.Products.Where(p => p.CategoryId == categoryId).OrderBy(p => p.Name).ToList();
+        return _db.Products
+            .Include(p => p.category)
+            .Where(p => p.CategoryId == categoryId)
+            .OrderBy(p => p.Name)
+            .ToList();
     }
 
     public ICollection<Product> GetProductsByName(string name)
@@ -31,7 +39,12 @@ public class ProductRepository : IProductRepository
         IQueryable<Product> query = _db.Products;
         if (!string.IsNullOrWhiteSpace(name))
         {
-            query = query.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim());
+            query = query
+                .Include(p => p.category)
+                .Where(p =>
+                    p.Name.ToLower().Trim().Contains(name.ToLower().Trim()) ||
+                    p.Description.ToLower().Trim().Contains(name.ToLower().Trim())
+                );
         }
         return query.OrderBy(p => p.Name).ToList();
     }
@@ -42,7 +55,9 @@ public class ProductRepository : IProductRepository
         {
             return null;
         }
-        return _db.Products.FirstOrDefault(p => p.Id == id);
+        return _db.Products
+            .Include(p => p.category)
+            .FirstOrDefault(p => p.Id == id);
     }
 
     public bool ProductExistsById(int id)
