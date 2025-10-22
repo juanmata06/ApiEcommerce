@@ -4,6 +4,7 @@ using ApiEcommerce.Repository.IRepository;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace ApiEcommerce.Controllers
 {
@@ -24,7 +25,7 @@ namespace ApiEcommerce.Controllers
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
         public IActionResult GetProducts()
         {
             var items = _productRepository.GetProducts();
@@ -36,7 +37,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
         public IActionResult GetProductById(int id)
         {
             var item = _productRepository.GetProductById(id);
@@ -52,7 +53,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult CreateProduct([FromBody] CreateProductDto createProductDto)
         {
@@ -85,7 +86,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
         public IActionResult GetProductsByCategoryId(int id)
         {
             var items = _productRepository.GetProductsByCategoryId(id);
@@ -101,7 +102,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
         public IActionResult GetProductsByName(string name)
         {
             var items = _productRepository.GetProductsByName(name);
@@ -111,6 +112,30 @@ namespace ApiEcommerce.Controllers
             }
             var itemsDto = _mapper.Map<List<ProductDto>>(items);
             return Ok(itemsDto);
+        }
+
+        [HttpPatch("buy-product/{name}/{quantity:int}", Name = "BuyProduct")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public IActionResult BuyProduct(string name, int quantity)
+        {
+            if (string.IsNullOrEmpty(name) || quantity <= 0)
+            {
+                return BadRequest($"Product's name or quantity aren't valid");
+            }
+            var foundProduct = _productRepository.ProductExistsByName(name);
+            if(!foundProduct)
+            {
+                return NotFound($"No product found with that name");
+            }
+            if (!_productRepository.BuyProduct(name, quantity))
+            {
+                ModelState.AddModelError("CustomError", $"The requested quantity is greater than the available stock");
+                return BadRequest(ModelState);
+            }
+            return Ok($"{quantity} {(quantity == 1 ? "unit" : "units")} of the product {name} have been purchased");
         }
     }
 }

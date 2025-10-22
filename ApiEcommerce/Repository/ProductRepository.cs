@@ -66,7 +66,7 @@ public class ProductRepository : IProductRepository
         {
             return false;
         }
-        return _db.Categories.Any(p => p.Id == id);
+        return _db.Products.Any(p => p.Id == id);
     }
 
     public bool ProductExistsByName(string name)
@@ -75,7 +75,7 @@ public class ProductRepository : IProductRepository
         {
             return false;
         }
-        return _db.Categories.Any(p => p.Name.ToLower().Trim() == name.ToLower().Trim());
+        return _db.Products.Any(p => p.Name.ToLower().Trim() == name.ToLower().Trim());
     }
 
     public bool CreateProduct(Product product)
