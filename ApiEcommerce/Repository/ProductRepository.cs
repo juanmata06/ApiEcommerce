@@ -96,7 +96,7 @@ public class ProductRepository : IProductRepository
         {
             return false;
         }
-        product.CreationDate = DateTime.Now;
+        product.UpdateDate = DateTime.Now;
         _db.Products.Update(product);
         return Save();
     }

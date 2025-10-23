@@ -63,18 +63,18 @@ namespace ApiEcommerce.Controllers
             }
             if (_productRepository.ProductExistsByName(createProductDto.Name))
             {
-                ModelState.AddModelError("CustomError", $"Product {createProductDto.Name} already exists.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Product {createProductDto.Name} already exists.");
                 return BadRequest(ModelState);
             }
             if (!_categoryRepository.CategoryExistsById(createProductDto.CategoryId))
             {
-                ModelState.AddModelError("CustomError", $"Category {createProductDto.CategoryId} doesn't exists.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Category {createProductDto.CategoryId} doesn't exists.");
                 return BadRequest(ModelState);
             }
             var product = _mapper.Map<Product>(createProductDto);
             if (!_productRepository.CreateProduct(product))
             {
-                ModelState.AddModelError("CustomError", "Something went wrong while creating the product.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while creating the product.");
                 return StatusCode(500, ModelState);
             }
             var createdProduct = _productRepository.GetProductById(product.Id);
@@ -118,7 +118,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status204NoContent)]
         public IActionResult BuyProduct(string name, int quantity)
         {
             if (string.IsNullOrEmpty(name) || quantity <= 0)
@@ -126,16 +126,78 @@ namespace ApiEcommerce.Controllers
                 return BadRequest($"Product's name or quantity aren't valid");
             }
             var foundProduct = _productRepository.ProductExistsByName(name);
-            if(!foundProduct)
+            if (!foundProduct)
             {
                 return NotFound($"No product found with that name");
             }
             if (!_productRepository.BuyProduct(name, quantity))
             {
-                ModelState.AddModelError("CustomError", $"The requested quantity is greater than the available stock");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"The requested quantity is greater than the available stock");
                 return BadRequest(ModelState);
             }
             return Ok($"{quantity} {(quantity == 1 ? "unit" : "units")} of the product {name} have been purchased");
         }
+
+        [HttpPut("{productId}:int", Name = "UpdateProduct")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProductDto), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult UpdateProduct(int productId, [FromBody] UpdateProductDto updateProductDto)
+        {
+            if (updateProductDto == null)
+            {
+                return BadRequest(ModelState);
+            }
+            if (!_productRepository.ProductExistsById(productId))
+            {
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Product {productId} doesn't exists.");
+                return BadRequest(ModelState);
+            }
+            if (_productRepository.ProductExistsByName(updateProductDto.Name))
+            {
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Product {updateProductDto.Name} already exists.");
+                return BadRequest(ModelState);
+            }
+            if (!_categoryRepository.CategoryExistsById(updateProductDto.CategoryId))
+            {
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Category {updateProductDto.CategoryId} doesn't exists.");
+                return BadRequest(ModelState);
+            }
+            var product = _mapper.Map<Product>(updateProductDto);
+            product.Id = productId;
+            if (!_productRepository.UpdateProduct(product))
+            {
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while updating the product.");
+                return StatusCode(500, ModelState);
+            }
+            return Ok($"Product {productId} have been updated");
+        }
+
+        [HttpDelete("{id:int}", Name = "DeleteProductById")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public IActionResult DeleteProductById(int id)
+        {
+            if(id == 0)
+            {
+                return BadRequest(ModelState);
+            }
+            var item = _productRepository.GetProductById(id);
+            if (item == null)
+            {
+                return NotFound($"No product {id} found");
+            }
+            if (!_productRepository.DeleteProduct(item))
+            {
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while deleting the product.");
+                return StatusCode(500, ModelState);
+            }
+            return Ok($"Product {id} have been deleted");
+        }
+
     }
 }

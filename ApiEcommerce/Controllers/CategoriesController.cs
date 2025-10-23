@@ -64,13 +64,13 @@ namespace ApiEcommerce.Controllers
             }
             if (_categoryRepository.CategoryExistsByName(createCategoryDto.Name))
             {
-                ModelState.AddModelError("CustomError", $"Category {createCategoryDto.Name} already exists.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Category {createCategoryDto.Name} already exists.");
                 return BadRequest(ModelState);
             }
             var category = _mapper.Map<Category>(createCategoryDto);
             if (!_categoryRepository.CreateCategory(category))
             {
-                ModelState.AddModelError("CustomError", "Something went wrong while saving the category.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while saving the category.");
                 return StatusCode(500, ModelState);
             }
             return CreatedAtRoute("GetCategoryById", new { id = category.Id }, category);
@@ -82,11 +82,12 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public IActionResult UpdateCategoryById(int id, [FromBody] CreateCategoryDto updateCategoryDto)
         {
             if (!_categoryRepository.CategoryExistsById(id))
             {
-                ModelState.AddModelError("CustomError", $"Category {id} doesn't exists.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Category {id} doesn't exists.");
                 return NotFound(ModelState);
             }
             if (updateCategoryDto == null)
@@ -95,17 +96,17 @@ namespace ApiEcommerce.Controllers
             }
             if (_categoryRepository.CategoryExistsByName(updateCategoryDto.Name))
             {
-                ModelState.AddModelError("CustomError", $"Category {updateCategoryDto.Name} already exists.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Category {updateCategoryDto.Name} already exists.");
                 return BadRequest(ModelState);
             }
             var category = _mapper.Map<Category>(updateCategoryDto);
             category.Id = id;
             if (!_categoryRepository.UpdateCategory(category))
             {
-                ModelState.AddModelError("CustomError", "Something went wrong while updating the category.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while updating the category.");
                 return StatusCode(500, ModelState);
             }
-            return NoContent();
+            return Ok($"Category {id} have been updated");
         }
 
         [HttpDelete("{id:int}", Name = "DeleteCategoryById")]
@@ -113,12 +114,12 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status204NoContent)]
         public IActionResult DeleteCategoryById(int id)
         {
             if (!_categoryRepository.CategoryExistsById(id))
             {
-                ModelState.AddModelError("CustomError", $"Category {id} doesn't exists.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Category {id} doesn't exists.");
                 return NotFound(ModelState);
             }
             var category = _categoryRepository.GetCategoryById(id);
@@ -128,10 +129,10 @@ namespace ApiEcommerce.Controllers
             }
             if (!_categoryRepository.DeleteCategory(category))
             {
-                ModelState.AddModelError("CustomError", "Something went wrong while deleting the category.");
+                ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while deleting the category.");
                 return StatusCode(500, ModelState);
             }
-            return NoContent();
+            return Ok($"Category {id} have been deleted");
         }
     }
 }
