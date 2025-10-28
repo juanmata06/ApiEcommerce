@@ -11,5 +11,5 @@ public interface IUserRepository
     bool UserExistsByUserName(string userName);
     Task<UserLoginResponseDto> Login(UserLoginDto userLoginDto);
     Task<User> Register(CreateUserDto createUserDto);
-    bool Save();
+    Task<bool> SaveAsync();
 }

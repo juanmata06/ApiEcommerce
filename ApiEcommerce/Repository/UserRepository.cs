@@ -18,7 +18,7 @@ public class UserRepository : IUserRepository
     public UserRepository(ApplicationDbContext db, IConfiguration configuration)
     {
         _db = db;
-        secretKey = configuration.GetValue<string>("SecretKey");
+        secretKey = configuration.GetValue<string>("ApiSettings:SecretKey");
     }
 
     public User? GetUserById(int id)
@@ -80,7 +80,7 @@ public class UserRepository : IUserRepository
             Subject = new ClaimsIdentity(new[]
             {
                 new Claim("id", user.Id.ToString()),
-                new Claim("username", user.Id.ToString()),
+                new Claim("username", user.Username),
                 new Claim(ClaimTypes.Role, user.Role ?? string.Empty),
             }
             ),
@@ -114,12 +114,14 @@ public class UserRepository : IUserRepository
             Password = password
         };
         _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        // Await the async SaveAsync defined on this repository (no changes to other repos)
+        await SaveAsync();
         return user;
     }
 
-    public bool Save()
+    public async Task<bool> SaveAsync()
     {
-        return _db.SaveChanges() >= 0;
+        // Proper async implementation for this repository only
+        return await _db.SaveChangesAsync() >= 0;
     }
 }
