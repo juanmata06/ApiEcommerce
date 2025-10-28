@@ -1,6 +1,8 @@
+using ApiEcommerce.Constants;
 using ApiEcommerce.Repository;
 using ApiEcommerce.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,9 +15,22 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddRouting(options => options.LowercaseUrls = true); // Displays routes as lower case
-///////////////////
+
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddControllers();
+
+// CORS config:
+builder.Services.AddCors(opts =>
+    {
+        opts.AddPolicy(PolicyNames.AllowSpecificOrigin,
+            builder =>
+            {
+                builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+            }
+
+        );
+    }
+);
 
 // Swagger services
 builder.Services.AddEndpointsApiExplorer();
@@ -31,6 +46,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(PolicyNames.AllowSpecificOrigin);
 
 app.UseAuthorization();
 
