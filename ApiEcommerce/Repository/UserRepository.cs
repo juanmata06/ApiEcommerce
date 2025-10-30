@@ -13,11 +13,13 @@ namespace ApiEcommerce.Repository;
 public class UserRepository : IUserRepository
 {
     private readonly ApplicationDbContext _db;
+    private readonly IConfiguration _configuration ;
     private readonly string? secretKey;
 
     public UserRepository(ApplicationDbContext db, IConfiguration configuration)
     {
         _db = db;
+        _configuration = configuration;
         secretKey = configuration.GetValue<string>("ApiSettings:SecretKey");
     }
 
@@ -85,6 +87,8 @@ public class UserRepository : IUserRepository
             }
             ),
             Expires = DateTime.UtcNow.AddHours(2),
+            Issuer = _configuration["ApiSettings:Issuer"],
+            Audience = _configuration["ApiSettings:Audience"],
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         var token = handlerToken.CreateToken(tokenDescriptor);

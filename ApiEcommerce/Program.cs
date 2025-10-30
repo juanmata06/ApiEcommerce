@@ -1,8 +1,12 @@
+using System.Text;
 using ApiEcommerce.Constants;
 using ApiEcommerce.Repository;
 using ApiEcommerce.Repository.IRepository;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +23,33 @@ builder.Services.AddRouting(options => options.LowercaseUrls = true); // Display
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddControllers();
 
+// Endpoints auth with Bearer Tokens config:
+var secretKey = builder.Configuration.GetValue<string>("ApiSettings:SecretKey");
+var Issuer = builder.Configuration.GetValue<string>("ApiSettings:Issuer");
+var Audience = builder.Configuration.GetValue<string>("ApiSettings:Audience");
+if (string.IsNullOrEmpty(secretKey))
+{
+    throw new InvalidOperationException("SecretKey has not been configured");
+}
+builder.Services.AddAuthentication(opts =>
+{
+    opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(opts =>
+{
+    opts.RequireHttpsMetadata = false;
+    opts.SaveToken = true;
+    opts.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = Issuer,
+        ValidAudience = Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ValidateIssuer = false,
+        ValidateAudience = true
+    };
+});
+
 // CORS config:
 builder.Services.AddCors(opts =>
     {
@@ -34,7 +65,38 @@ builder.Services.AddCors(opts =>
 
 // Swagger services
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(
+  options =>
+  {
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+      Description = "Nuestra API utiliza la Autenticación JWT usando el esquema Bearer. \n\r\n\r" +
+                    "Ingresa la palabra a continuación el token generado en login.\n\r\n\r" +
+                    "Ejemplo: \"12345abcdef\"",
+      Name = "Authorization",
+      In = ParameterLocation.Header,
+      Type = SecuritySchemeType.Http,
+      Scheme = "Bearer"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+      {
+        new OpenApiSecurityScheme
+        {
+          Reference = new OpenApiReference
+          {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
+          },
+          Scheme = "oauth2",
+          Name = "Bearer",
+          In = ParameterLocation.Header
+        },
+        new List<string>()
+      }
+    });
+  }
+);
 
 var app = builder.Build();
 
@@ -48,6 +110,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors(PolicyNames.AllowSpecificOrigin);
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
