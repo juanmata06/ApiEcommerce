@@ -2,6 +2,7 @@ using System.Text;
 using ApiEcommerce.Constants;
 using ApiEcommerce.Repository;
 using ApiEcommerce.Repository.IRepository;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +27,7 @@ builder.Services.AddResponseCaching(options =>
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddRouting(options => options.LowercaseUrls = true); // Displays routes as lower case
+builder.Services.AddRouting(options => options.LowercaseUrls = true); //* Displays routes as lower case
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddControllers(option =>
@@ -60,6 +61,21 @@ builder.Services.AddAuthentication(opts =>
     ValidateIssuer = false,
     ValidateAudience = true
   };
+});
+
+//* Api versioning config
+var apiVersioningBuilder = builder.Services.AddApiVersioning(option =>
+{
+  option.AssumeDefaultVersionWhenUnspecified = true;
+  option.DefaultApiVersion = new ApiVersion(1, 0);
+  option.ReportApiVersions = true;
+  // option.ApiVersionReader = ApiVersionReader.Combine(new QueryStringApiVersionReader("api-version"));
+});
+
+apiVersioningBuilder.AddApiExplorer(option =>
+{
+  option.GroupNameFormat = "'v'VVV"; //* Ex: v1, v2, v3...
+  option.SubstituteApiVersionInUrl = true; //* Ex: api/v{version}/categories
 });
 
 //* CORS config
@@ -107,6 +123,23 @@ builder.Services.AddSwaggerGen(
         new List<string>()
       }
     });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+      Version = "v1",
+      Title = "API Ecomerce",
+      Description = "API for managing products and users",
+      TermsOfService = new Uri("https://guzzo.dev/"),
+      Contact = new OpenApiContact
+      {
+        Name = "Juan Mata",
+        Url = new Uri("https://guzzo.dev/"),
+      },
+      License = new OpenApiLicense
+      {
+        Name = "Use license",
+        Url = new Uri("https://guzzo.dev/"),
+      }
+    });
   }
 );
 
@@ -117,6 +150,10 @@ if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
   app.UseSwaggerUI();
+  // app.UseSwaggerUI(options =>
+  // {
+  //   options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+  // });
 }
 
 app.UseHttpsRedirection();

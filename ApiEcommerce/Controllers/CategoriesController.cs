@@ -6,10 +6,13 @@ using AutoMapper;
 using ApiEcommerce.Constants;
 using ApiEcommerce.Models.Dtos;
 using ApiEcommerce.Repository.IRepository;
+using Asp.Versioning;
 
 namespace ApiEcommerce.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     [ApiController]
     [Authorize(Roles = "admin")]
     public class CategoriesController : ControllerBase
@@ -39,6 +42,23 @@ namespace ApiEcommerce.Controllers
             return Ok(categogiesDto);
         }
 
+        [AllowAnonymous]
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
+        [MapToApiVersion("2.0")]
+        public IActionResult GetCategoriesOrderedById()
+        {
+            var categories = _categoryRepository.GetCategories().OrderBy(item => item.Id);
+            var categogiesDto = new List<CategoryDto>();
+
+            foreach (var category in categories)
+            {
+                categogiesDto.Add(_mapper.Map<CategoryDto>(category));
+            }
+            return Ok(categogiesDto);
+        }
+        
         [AllowAnonymous]
         [HttpGet("{id:int}", Name = "GetCategoryById")]
         [ResponseCache(CacheProfileName = CacheProfiles.Default10)]
