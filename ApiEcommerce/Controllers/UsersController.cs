@@ -1,3 +1,4 @@
+using ApiEcommerce.Constants;
 using ApiEcommerce.Models.Dtos.User;
 using ApiEcommerce.Repository.IRepository;
 using AutoMapper;
@@ -32,6 +33,7 @@ namespace ApiEcommerce.Controllers
         }
 
         [HttpGet("{id:int}", Name = "GetUserById")]
+        [ResponseCache(CacheProfileName = CacheProfiles.Default10)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
