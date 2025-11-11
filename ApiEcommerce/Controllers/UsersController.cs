@@ -35,13 +35,13 @@ namespace ApiEcommerce.Controllers
             return Ok(itemsDto);
         }
 
-        [HttpGet("{id:int}", Name = "GetUserById")]
+        [HttpGet("{id}", Name = "GetUserById")]
         [ResponseCache(CacheProfileName = CacheProfiles.Default10)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-        public IActionResult GetUserById(int id)
+        public IActionResult GetUserById(string id)
         {
             var item = _userRepository.GetUserById(id);
             if (item == null)

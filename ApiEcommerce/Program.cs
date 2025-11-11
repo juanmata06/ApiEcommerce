@@ -1,9 +1,11 @@
 using System.Text;
 using ApiEcommerce.Constants;
+using ApiEcommerce.Models;
 using ApiEcommerce.Repository;
 using ApiEcommerce.Repository.IRepository;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -23,13 +25,19 @@ builder.Services.AddResponseCaching(options =>
   options.UseCaseSensitivePaths = true;
 });
 
-//* My repositories
+//* My repositories:
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddRouting(options => options.LowercaseUrls = true); //* Displays routes as lower case
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
+
+//* ASP.NET Core Identity:
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
 builder.Services.AddControllers(option =>
 {
   option.CacheProfiles.Add(CacheProfiles.Default10, new CacheProfile { Duration = 10 });
@@ -150,10 +158,6 @@ if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
   app.UseSwaggerUI();
-  // app.UseSwaggerUI(options =>
-  // {
-  //   options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-  // });
 }
 
 app.UseHttpsRedirection();

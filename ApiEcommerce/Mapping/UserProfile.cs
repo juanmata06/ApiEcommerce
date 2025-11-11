@@ -1,5 +1,6 @@
 using System;
 using ApiEcommerce.Models;
+using ApiEcommerce.Models.Dtos.ApplicationUser;
 using ApiEcommerce.Models.Dtos.User;
 using AutoMapper;
 
@@ -13,5 +14,8 @@ public class UserProfile : Profile
         CreateMap<User, CreateUserDto>().ReverseMap();
         CreateMap<User, UserLoginDto>().ReverseMap();
         CreateMap<User, UserLoginResponseDto>().ReverseMap();
+        CreateMap<ApplicationUser, UserDataDto>().ReverseMap();
+        CreateMap<ApplicationUser, UserDto>().ReverseMap();
+
     }
 }
