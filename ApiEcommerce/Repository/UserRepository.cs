@@ -57,12 +57,7 @@ public class UserRepository : IUserRepository
     {
         if (string.IsNullOrEmpty(userLoginDto.Username))
         {
-            return new UserLoginResponseDto()
-            {
-                Token = "",
-                User = null,
-                Message = "Username is required"
-            };
+            throw new InvalidOperationException("Username is required");
         }
 
         var user = await _db.ApplicationUsers.FirstOrDefaultAsync<ApplicationUser>(
@@ -70,33 +65,18 @@ public class UserRepository : IUserRepository
         );
         if (user == null)
         {
-            return new UserLoginResponseDto()
-            {
-                Token = "",
-                User = null,
-                Message = "Username not found"
-            };
+            throw new InvalidOperationException("Username not found");
         }
 
         if (userLoginDto.Password == null)
         {
-            return new UserLoginResponseDto()
-            {
-                Token = "",
-                User = null,
-                Message = "Password required"
-            };
+            throw new InvalidOperationException("Password is required");
         }
 
         bool isValid = await _userManager.CheckPasswordAsync(user, userLoginDto.Password);
         if (!isValid)
         {
-            return new UserLoginResponseDto()
-            {
-                Token = "",
-                User = null,
-                Message = "Credentials are not correct"
-            };
+            throw new InvalidOperationException("Credentials are not correct");
         }
 
         var handlerToken = new JwtSecurityTokenHandler();
@@ -115,7 +95,7 @@ public class UserRepository : IUserRepository
                 new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? string.Empty),
             }
             ),
-            Expires = DateTime.UtcNow.AddHours(2),
+            Expires = DateTime.UtcNow.AddHours(24),
             Issuer = _configuration["ApiSettings:Issuer"],
             Audience = _configuration["ApiSettings:Audience"],
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

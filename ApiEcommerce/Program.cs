@@ -160,6 +160,9 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
+//* Allow static files
+app.UseStaticFiles();
+
 app.UseHttpsRedirection();
 
 app.UseCors(PolicyNames.AllowSpecificOrigin);

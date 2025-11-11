@@ -12,3 +12,6 @@ obj/
 *.nupkg
 *.snupkg
 PublishProfiles/
+
+#* My configs:
+wwwroot/

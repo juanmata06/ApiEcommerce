@@ -64,7 +64,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult CreateProduct([FromBody] CreateProductDto createProductDto)
+        public IActionResult CreateProduct([FromForm] CreateProductDto createProductDto)
         {
             if (createProductDto == null)
             {
@@ -80,7 +80,17 @@ namespace ApiEcommerce.Controllers
                 ModelState.AddModelError(Constants.Constants.CustomErrorKey, $"Category {createProductDto.CategoryId} doesn't exists.");
                 return BadRequest(ModelState);
             }
+
             var product = _mapper.Map<Product>(createProductDto);
+            if (createProductDto.Image != null)
+            {
+                UploadProductImage(createProductDto, product);
+            }
+            else
+            {
+                product.ImgUrl = Constants.Constants.DefaultImage;
+            }
+
             if (!_productRepository.CreateProduct(product))
             {
                 ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while creating the product.");
@@ -156,7 +166,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProductDto), StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateProduct(int productId, [FromBody] UpdateProductDto updateProductDto)
+        public IActionResult UpdateProduct(int productId, [FromForm] UpdateProductDto updateProductDto)
         {
             if (updateProductDto == null)
             {
@@ -178,7 +188,18 @@ namespace ApiEcommerce.Controllers
                 return BadRequest(ModelState);
             }
             var product = _mapper.Map<Product>(updateProductDto);
+
             product.Id = productId;
+
+            if (updateProductDto.Image != null)
+            {
+                UploadProductImage(updateProductDto, product);
+            }
+            else
+            {
+                product.ImgUrl = Constants.Constants.DefaultImage;
+            }
+
             if (!_productRepository.UpdateProduct(product))
             {
                 ModelState.AddModelError(Constants.Constants.CustomErrorKey, "Something went wrong while updating the product.");
@@ -194,7 +215,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public IActionResult DeleteProductById(int id)
         {
-            if(id == 0)
+            if (id == 0)
             {
                 return BadRequest(ModelState);
             }
@@ -211,5 +232,39 @@ namespace ApiEcommerce.Controllers
             return Ok($"Product {id} have been deleted");
         }
 
+        private void UploadProductImage(dynamic productDto, Product product)
+        {
+            //* Genera un nombre de archivo unico combinando el ID del producto, un GUID y la extension original
+            string fileName = product.Id + Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName);
+            //* Construye la ruta de la carpeta (en local) donde se guardará la imagen
+            var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "ProductsImages");
+
+            //* Si la carpeta no existe, la crea
+            if (!Directory.Exists(imagesFolder))
+            {
+                Directory.CreateDirectory(imagesFolder);
+            }
+
+            //* Construye la ruta completa del archivo donde se guardara la imagen
+            var filePath = Path.Combine(imagesFolder, fileName);
+            //* Crea un objeto FileInfo para verificar si el archivo ya existe
+            FileInfo file = new FileInfo(filePath);
+            //* Si el archivo existe, lo elimina para evitar conflictos
+            if (file.Exists)
+            {
+                file.Delete();
+            }
+
+            //* Crea un flujo de archivo para escribir la imagen en el servidor
+            using var fileStream = new FileStream(filePath, FileMode.Create);
+            //* Copia el contenido de la imagen subida al archivo en el servidor
+            productDto.Image.CopyTo(fileStream);
+            //* Construye la URL base del servidor (esquema + host + base path)
+            var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+            //* Asigna la URL publica de la imagen al producto
+            product.ImgUrl = $"{baseUrl}/ProductsImages/{fileName}";
+            //* Asigna la ruta local del archivo al producto para almacenamiento en base de datos
+            product.ImgUrlLocal = filePath;
+        }
     }
 }
